@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import "./Main.scss";
+import Graph from "../Graph/Graph";
 
 class Main extends Component {
 	constructor(props) {
@@ -15,7 +16,12 @@ class Main extends Component {
 	};
 
 	render() {
-		return <div>I am Main</div>;
+		return (
+			<div className="Main">
+				<div>I am Main</div>
+				<Graph />
+			</div>
+		);
 	}
 }
 
