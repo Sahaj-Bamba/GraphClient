@@ -11,6 +11,9 @@ import {
 	GraphUtils, // optional, useful utility functions
 } from "react-digraph";
 import Button from "@material-ui/core/Button";
+import InputLabel from "@material-ui/core/InputLabel";
+import Select from "@material-ui/core/Select";
+
 import { generatePath } from "react-router-dom";
 
 const GraphConfig = {
@@ -75,7 +78,7 @@ const sample = {
 			source: 1,
 			target: 2,
 			type: "emptyEdge",
-			handleText: "saddddddddddd",
+			handleText: "",
 		},
 		{
 			source: 2,
@@ -99,16 +102,18 @@ class Graph extends Component {
 				title: "",
 				field: "",
 				data: {},
+				type: "",
 			},
 			formVisible: false,
 		};
 	}
 
 	handleSubmit = (event) => {
-		const { title, field, data } = this.state.input;
+		const { title, field, data, type } = this.state.input;
 		const { graph } = this.state;
 		if (field === "node") {
 			data.title = title;
+			data.type = type;
 			var newSample = graph.nodes.map((value, index) => {
 				if (value.id === data.id) {
 					return data;
@@ -125,6 +130,7 @@ class Graph extends Component {
 					title: "",
 					field: "",
 					data: {},
+					type: "",
 				},
 			});
 		} else if (field === "edge") {
@@ -159,15 +165,21 @@ class Graph extends Component {
 			} else {
 				graphConfig.NodeTypes[title] = {
 					typeText: title,
-					shapeId: "#empty",
+					shapeId: "#" + title,
 					shape: (
-						<symbol viewBox="0 0 100 100" id="empty" key="0">
-							<circle cx="50" cy="50" r="50"></circle>
+						<symbol viewBox="0 0 100 100" id={title} key={0}>
+							<circle cx="50" cy="50" r="100"></circle>
 						</symbol>
 					),
 				};
 				this.setState({
 					graphConfig: graphConfig,
+					formVisible: false,
+					input: {
+						title: "",
+						field: "",
+						data: {},
+					},
 				});
 			}
 		}
@@ -195,6 +207,7 @@ class Graph extends Component {
 				title: node && node.title,
 				field: "node",
 				data: node,
+				type: node.type,
 			},
 			selected: node,
 		});
@@ -303,10 +316,20 @@ class Graph extends Component {
 		});
 	};
 
+	nodeTypeChange = (event) => {
+		this.setState({
+			input: {
+				...this.state.input,
+				type: event.target.value,
+			},
+		});
+		event.preventDefault();
+	};
+
 	render() {
 		const { nodes, edges } = this.state.graph;
 		const { selected, formVisible } = this.state;
-		const { title } = this.state.input;
+		const { title, field, type } = this.state.input;
 		const { NodeTypes, NodeSubtypes, EdgeTypes } = this.state.graphConfig;
 
 		const display = {
@@ -319,13 +342,14 @@ class Graph extends Component {
 
 		return (
 			<div id="graph">
-				<Button
+				{/* <Button
 					variant="contained"
 					color="primary"
 					onClick={this.createNodeType}
 				>
 					Create Node Type
 				</Button>
+				<br /> */}
 				<div id="dataForm" style={formVisible ? display : noDisplay}>
 					<form onSubmit={this.handleSubmit}>
 						<label>
@@ -337,6 +361,33 @@ class Graph extends Component {
 								onChange={this.handleTitleChange}
 							/>
 						</label>
+						<br />
+						{field === "node" && (
+							<>
+								<InputLabel htmlFor="outlined-age-native-simple">
+									Node Type
+								</InputLabel>
+								<Select
+									native
+									value={type}
+									onChange={this.nodeTypeChange}
+									label="Node Type"
+									inputProps={{
+										name: "nodeType",
+										id: "outlined-age-native-simple",
+									}}
+								>
+									{Object.keys(NodeTypes).map((value) => {
+										return (
+											<option value={value}>
+												{value}
+											</option>
+										);
+									})}
+								</Select>
+								<br />
+							</>
+						)}
 						<input type="submit" name="submit" value="Submit" />
 					</form>
 				</div>
