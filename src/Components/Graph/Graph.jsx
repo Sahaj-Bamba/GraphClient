@@ -10,27 +10,17 @@ import {
 	BwdlTransformer, // optional, Example JSON transformer
 	GraphUtils, // optional, useful utility functions
 } from "react-digraph";
+import Button from "@material-ui/core/Button";
 import { generatePath } from "react-router-dom";
 
 const GraphConfig = {
 	NodeTypes: {
 		empty: {
-			// required to show empty nodes
 			typeText: "Node",
 			shapeId: "#empty", // relates to the type property of a node
 			shape: (
 				<symbol viewBox="0 0 100 100" id="empty" key="0">
-					<circle cx="50" cy="50" r="45"></circle>
-				</symbol>
-			),
-		},
-		custom: {
-			// required to show empty nodes
-			typeText: "Custom",
-			shapeId: "#custom", // relates to the type property of a node
-			shape: (
-				<symbol viewBox="0 0 50 25" id="custom" key="0">
-					<ellipse cx="50" cy="25" rx="50" ry="25"></ellipse>
+					<circle cx="50" cy="50" r="50"></circle>
 				</symbol>
 			),
 		},
@@ -38,13 +28,10 @@ const GraphConfig = {
 	NodeSubtypes: {},
 	EdgeTypes: {
 		emptyEdge: {
-			// required to show empty edges
 			shapeId: "#emptyEdge",
 			shape: (
 				<symbol viewBox="0 0 50 50" id="emptyEdge" key="0">
-					<circle cx="25" cy="25" r="8" fill="currentColor">
-						{" "}
-					</circle>
+					<circle cx="25" cy="25" r="20" fill="currentColor"></circle>
 				</symbol>
 			),
 		},
@@ -88,6 +75,7 @@ const sample = {
 			source: 1,
 			target: 2,
 			type: "emptyEdge",
+			handleText: "saddddddddddd",
 		},
 		{
 			source: 2,
@@ -105,6 +93,7 @@ class Graph extends Component {
 
 		this.state = {
 			graph: sample,
+			graphConfig: GraphConfig,
 			selected: {},
 			input: {
 				title: "",
@@ -115,14 +104,12 @@ class Graph extends Component {
 		};
 	}
 
-	/* Define custom graph editing methods here */
-
 	handleSubmit = (event) => {
 		const { title, field, data } = this.state.input;
 		const { graph } = this.state;
-		data.title = title;
 		if (field === "node") {
-			var newSample = sample.nodes.map((value, index) => {
+			data.title = title;
+			var newSample = graph.nodes.map((value, index) => {
 				if (value.id === data.id) {
 					return data;
 				}
@@ -140,6 +127,49 @@ class Graph extends Component {
 					data: {},
 				},
 			});
+		} else if (field === "edge") {
+			data.handleText = title;
+			var newSample = graph.edges.map((value, index) => {
+				if (
+					value.source === data.source &&
+					value.target === data.target
+				) {
+					return data;
+				}
+				return value;
+			});
+			this.setState({
+				graph: {
+					...this.state.graph,
+					edges: newSample,
+				},
+				formVisible: false,
+				input: {
+					title: "",
+					field: "",
+					data: {},
+				},
+			});
+		} else if (field === "nodeType") {
+			const { graphConfig } = this.state;
+			if (
+				graphConfig.NodeTypes &&
+				Object.keys(graphConfig.NodeTypes).includes(title)
+			) {
+			} else {
+				graphConfig.NodeTypes[title] = {
+					typeText: title,
+					shapeId: "#empty",
+					shape: (
+						<symbol viewBox="0 0 100 100" id="empty" key="0">
+							<circle cx="50" cy="50" r="50"></circle>
+						</symbol>
+					),
+				};
+				this.setState({
+					graphConfig: graphConfig,
+				});
+			}
 		}
 		event.preventDefault();
 	};
@@ -156,6 +186,9 @@ class Graph extends Component {
 	};
 
 	onSelectNode = (node) => {
+		if (!node) {
+			return;
+		}
 		this.setState({
 			formVisible: true,
 			input: {
@@ -163,15 +196,16 @@ class Graph extends Component {
 				field: "node",
 				data: node,
 			},
+			selected: node,
 		});
 	};
 
 	onCreateNode = (x, y, event) => {
 		const { graph } = this.state;
-
+		debugger;
 		var node = {
 			id: Date.now(),
-			title: "Sample Title",
+			title: "Sample",
 			x: x,
 			y: y,
 			type: "empty",
@@ -185,8 +219,17 @@ class Graph extends Component {
 		});
 	};
 
+	onDeleteNode = (node) => {
+		const { graph } = this.state;
+		this.setState({
+			graph: {
+				...graph,
+				nodes: [...graph.nodes.filter((value) => value.id !== node.id)],
+			},
+		});
+	};
+
 	onBackgroundClick = (x, y, event) => {
-		debugger;
 		this.setState({
 			formVisible: false,
 			input: {
@@ -194,6 +237,69 @@ class Graph extends Component {
 				field: "",
 				data: {},
 			},
+			selected: {},
+		});
+	};
+
+	onSelectEdge = (edge) => {
+		if (!edge) {
+			return;
+		}
+		this.setState({
+			formVisible: true,
+			input: {
+				title: edge && edge.handleText && edge.handleText,
+				field: "edge",
+				data: edge,
+			},
+			selected: edge,
+		});
+	};
+
+	onCreateEdge = (source, dest) => {
+		const { graph } = this.state;
+		debugger;
+		var edge = {
+			source: source.id,
+			target: dest.id,
+			type: "emptyEdge",
+			handleText: "",
+		};
+
+		this.setState({
+			graph: {
+				...graph,
+				edges: [...graph.edges, edge],
+			},
+		});
+	};
+
+	onDeleteEdge = (edge) => {
+		debugger;
+		const { graph } = this.state;
+		this.setState({
+			graph: {
+				...graph,
+				edges: [
+					...graph.edges.filter(
+						(value) =>
+							value.source !== edge.source &&
+							value.target !== edge.target
+					),
+				],
+			},
+		});
+	};
+
+	createNodeType = () => {
+		this.setState({
+			formVisible: true,
+			input: {
+				title: "",
+				field: "nodeType",
+				data: {},
+			},
+			selected: {},
 		});
 	};
 
@@ -201,7 +307,7 @@ class Graph extends Component {
 		const { nodes, edges } = this.state.graph;
 		const { selected, formVisible } = this.state;
 		const { title } = this.state.input;
-		const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
+		const { NodeTypes, NodeSubtypes, EdgeTypes } = this.state.graphConfig;
 
 		const display = {
 			display: "block",
@@ -213,6 +319,13 @@ class Graph extends Component {
 
 		return (
 			<div id="graph">
+				<Button
+					variant="contained"
+					color="primary"
+					onClick={this.createNodeType}
+				>
+					Create Node Type
+				</Button>
 				<div id="dataForm" style={formVisible ? display : noDisplay}>
 					<form onSubmit={this.handleSubmit}>
 						<label>
